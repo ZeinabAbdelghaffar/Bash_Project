@@ -91,11 +91,63 @@ select_from_table() {
     fi
 }
 
+
+delete_from_table() {
+    read -p "Enter the table name: " table_name
+    read -p "Enter the PK or leave blank for all rows: " condition
+    awk -v cond="$condition" '
+        BEGIN { FS = "|" }
+        { 
+            if (cond == "" || $0 !~ cond) {
+                print $0
+            }
+        }
+    ' "$table_name" > temp_table && mv temp_table "$table_name"
+    echo "Row deleted from $table_name successfully."
+}
+
+update_table() {
+    read -p "Enter the table name: " table_name
+    if [ -e "$table_name" ]; then
+        read -p "Enter the PK to identify rows to update: " condition
+        if ! awk -v cond="$condition" 'BEGIN { FS = "|" } $0 ~ cond { found = 1; exit } END { exit !found }' "$table_name"; then
+            echo "Invalid selection: Primary key '$condition' does not exist in $table_name."
+            return 1
+        fi
+        read -p "Enter the new values for each column: " new_values
+        awk -v cond="$condition" -v new_vals="$new_values" '
+            BEGIN { FS = "|" }
+            {
+                if (cond == "" || $0 ~ cond) {
+                    split(new_vals, new_val_array, "|")
+                    for (i = 1; i <= NF; i++) {
+                        if (new_val_array[i] != "") {
+                            $i = new_val_array[i]
+                        }
+                    }
+                    sep = ""
+                    for (i = 1; i <= NF; i++) {
+                        printf "%s%s", sep, $i
+                        sep = " | "
+                    }
+                    printf "\n"
+                }
+                else {
+                    print $0
+                }
+            }
+        ' "$table_name" > temp_table && mv temp_table "$table_name"
+        echo "Row updated in $table_name successfully."
+    else
+        echo "Table $table_name does not exist."
+    fi
+}
+
 database_menu() {
     while true; do
         clear
         PS3="Database Menu: "
-        options=("Create Table" "List Tables" "Drop Table" "Insert into Table" "Select From Table")
+        options=("Create Table" "List Tables" "Drop Table" "Insert into Table" "Select From Table" "Delete From Table" "Update Table") 
         select opt in "${options[@]}"; do
             case $opt in
                 "Create Table")
@@ -112,6 +164,12 @@ database_menu() {
                     ;;
                 "Select From Table")
                     select_from_table
+                    ;;
+                "Delete From Table")
+                    delete_from_table
+                    ;;
+                "Update Table")
+                    update_table
                     ;;
                 *) echo "Invalid option, please select a number from 1 to 7";;
             esac
