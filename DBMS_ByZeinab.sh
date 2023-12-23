@@ -1,100 +1,107 @@
 #!/bin/bash
 
 create_database() {
-    read -p "Enter the DB name: " dbname
-    mkdir "$dbname"
-    echo "DB $dbname created successfully."
+    dbname=$(zenity --entry --title="Create Database" --text="Enter the DB name:")
+    if [ -n "$dbname" ]; then
+        mkdir "$dbname"
+        zenity --info --title="Success" --text="Database $dbname created successfully."
+    else
+        zenity --warning --title="Warning" --text="Database name cannot be empty."
+    fi
 }
 
 list_databases() {
-    echo "List of databases:"
-    for database in $(ls -d */ | sed 's#/##'); do
-        echo "- $database"
-    done
+    database=$(ls -d */ | sed 's#/##')
+    zenity --info --title="List of Databases" --text="List of databases:\n$databases"
 }
 
 connect_to_database() {
-    read -p "Enter the DB name: " dbname
+    dbname=$(zenity --entry --title="Connect to Database" --text="Enter the DB name:")
     if [ -d "$dbname" ]; then
         cd "$dbname" || exit
         database_menu
     else
-        echo "DB $dbname does not exist."
+        zenity --error --title="Error" --text="Database $dbname does not exist."
     fi
 }
 
 drop_database() {
-    read -p "Enter the DB name: " dbname
+    dbname=$(zenity --entry --title="Drop Database" --text="Enter the DB name:")
     if [ -d "$dbname" ]; then
         rm -r "$dbname"
-        echo "DB $dbname dropped successfully."
+        zenity --info --title="Success" --text="Database $dbname dropped successfully."
     else
-        echo "DB $dbname does not exist."
+        zenity --error --title="Error" --text="Database $dbname does not exist."
     fi
 }
 
 create_table() {
-    read -p "Enter the table name: " table_name
-    if [ -e "$table_name" ]; then
-        echo "Table $table_name already exists."
+    table_name=$(zenity --entry --title="Create Table" --text="Enter the table name:")
+    if [ -n "$table_name" ]; then
+        if [ -e "$table_name" ]; then
+            zenity --warning --title="Warning" --text="Table $table_name already exists."
+        else
+            column_names=$(zenity --entry --title="Enter Column Names" --text="Enter column names:")
+            data_types=$(zenity --entry --title="Enter Data Types" --text="Enter data types for columns:")
+            header="$column_names|$data_types"
+            echo "$header" > "$table_name"
+            zenity --info --title="Success" --text="Table $table_name created successfully."
+        fi
     else
-        read -p "Enter column names: " column_names
-        read -p "Enter data types for columns: " data_types
-        header="$column_names|$data_types"
-        echo "$header" > "$table_name"
-        echo "Table $table_name created successfully."
+        zenity --warning --title="Warning" --text="Table name cannot be empty."
     fi
 }
 
 list_tables() {
-    echo "List of tables:"
-    for table in $(ls -p | grep -E -v '/$'); do
-        echo "- $table"
-    done
+    table=$(ls -p | grep -E -v '/$')
+    zenity --info --title="List of Tables" --text="List of tables:\n$tables"
 }
 
 drop_table() {
-    read -p "Enter the table name: " table_name
+    table_name=$(zenity --entry --title="Drop Table" --text="Enter the table name:")
     if [ -e "$table_name" ]; then
         rm "$table_name"
-        echo "Table $table_name dropped successfully."
+        zenity --info --title="Success" --text="Table $table_name dropped successfully."
     else
-        echo "Table $table_name does not exist."
+        zenity --error --title="Error" --text="Table $table_name does not exist."
     fi
 }
 
 insert_into_table() {
-    read -p "Enter the table name: " table_name
+    table_name=$(zenity --entry --title="Insert into Table" --text="Enter the table name:")
     if [ -e "$table_name" ]; then
-        read -p "Enter values for each column: " input_values
+        input_values=$(zenity --entry --title="Insert into Table" --text="Enter values for each column:")
         echo "$input_values" >> "$table_name"
-        echo "Row inserted into $table_name successfully."
+        zenity --info --title="Success" --text="Row inserted into $table_name successfully."
     else
-        echo "Table $table_name does not exist. Please create the table first."
+        zenity --error --title="Error" --text="Table $table_name does not exist. Please create the table first."
     fi
 }
 
 select_from_table() {
-    read -p "Enter the table name: " table_name
+    table_name=$(zenity --entry --title="Select From Table" --text="Enter the table name:")
     if [ -e "$table_name" ]; then
-        read -p "Enter the PK or leave blank for all rows: " condition
-        awk -v cond="$condition" -v header_printed=0 '
-            BEGIN { FS = "|" }
-            { 
-                if (NR == 1 || (cond != "" && $0 !~ cond))
-                    next; 
-                print
-            }
-        ' "$table_name"
+        condition=$(zenity --entry --title="Select From Table" --text="Enter the PK or leave blank for all rows:")
+        if [ -z "$condition" ]; then
+            cat "$table_name" | zenity --text-info --title="Table Content" --width=400 --height=300
+        else
+            awk -v cond="$condition" '
+               BEGIN { FS = "|" }
+               {
+                   if ($0 ~ cond)
+                       print
+               }
+            ' "$table_name"
+        fi
     else
-        echo "Table $table_name does not exist."
+        zenity --error --title="Error" --text="Table $table_name does not exist."
     fi
 }
 
 
 delete_from_table() {
-    read -p "Enter the table name: " table_name
-    read -p "Enter the PK or leave blank for all rows: " condition
+    table_name=$(zenity --entry --title="Delete From Table" --text="Enter the table name:")
+    condition=$(zenity --entry --title="Delete From Table" --text="Enter the PK or leave blank for all rows:")
     awk -v cond="$condition" '
         BEGIN { FS = "|" }
         { 
@@ -103,18 +110,18 @@ delete_from_table() {
             }
         }
     ' "$table_name" > temp_table && mv temp_table "$table_name"
-    echo "Row deleted from $table_name successfully."
+    zenity --info --title="Success" --text="Row deleted from $table_name successfully."
 }
 
 update_table() {
-    read -p "Enter the table name: " table_name
+    table_name=$(zenity --entry --title="Update Table" --text="Enter the table name:")
     if [ -e "$table_name" ]; then
-        read -p "Enter the PK to identify rows to update: " condition
+        condition=$(zenity --entry --title="Update Table" --text="Enter the PK to identify rows to update:")
         if ! awk -v cond="$condition" 'BEGIN { FS = "|" } $0 ~ cond { found = 1; exit } END { exit !found }' "$table_name"; then
-            echo "Invalid selection: Primary key '$condition' does not exist in $table_name."
+            zenity --error --title="Error" --text="Invalid selection: Primary key '$condition' does not exist in $table_name."
             return 1
         fi
-        read -p "Enter the new values for each column: " new_values
+        new_values=$(zenity --entry --title="Update Table" --text="Enter the new values for each column:")
         awk -v cond="$condition" -v new_vals="$new_values" '
             BEGIN { FS = "|" }
             {
@@ -137,19 +144,16 @@ update_table() {
                 }
             }
         ' "$table_name" > temp_table && mv temp_table "$table_name"
-        echo "Row updated in $table_name successfully."
+        zenity --info --title="Success" --text="Row updated in $table_name successfully."
     else
-        echo "Table $table_name does not exist."
+        zenity --error --title="Error" --text="Table $table_name does not exist."
     fi
 }
 
 database_menu() {
     while true; do
-        clear
-        PS3="Database Menu: "
-        options=("Create Table" "List Tables" "Drop Table" "Insert into Table" "Select From Table" "Delete From Table" "Update Table") 
-        select opt in "${options[@]}"; do
-            case $opt in
+        choice=$(zenity --list --title="Database Menu" --column="Options" "Create Table" "List Tables" "Drop Table" "Insert into Table" "Select From Table" "Delete From Table" "Update Table")
+        case $choice in
                 "Create Table")
                     create_table
                     ;;
@@ -171,18 +175,14 @@ database_menu() {
                 "Update Table")
                     update_table
                     ;;
-                *) echo "Invalid option, please select a number from 1 to 7";;
-            esac
-        done
+                *) zenity --warning --title="Warning" --text="Invalid option. Please choose again.";;
+        esac
     done
 }
 
 while true; do
-    clear
-    PS3="Main Menu: "
-    options=("Create Database" "List Databases" "Connect To Database" "Drop Database")
-    select opt in "${options[@]}"; do
-        case $opt in
+    choice=$(zenity --list --title="Main Menu" --column="Options" "Create Database" "List Databases" "Connect To Database" "Drop Database")
+    case $choice in
             "Create Database")
                 create_database
                 ;;
@@ -195,7 +195,6 @@ while true; do
             "Connect To Database")
                 connect_to_database
                 ;;
-            *) echo "Invalid option, please select a number from 1 to 4";;
-        esac
-    done
+            *) zenity --warning --title="Warning" --text="Invalid option. Please choose again.";;
+    esac
 done
