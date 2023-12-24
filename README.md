@@ -52,3 +52,6 @@ Update data according to a condition.
 
 #### Drop
 Drop all data with the structure.
+
+### The Bonus:
+- GUI instead of the above menu based by Zenity.
