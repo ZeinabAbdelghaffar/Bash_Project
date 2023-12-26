@@ -12,7 +12,7 @@ create_database() {
 
 list_databases() {
     database=$(ls -d */ | sed 's#/##')
-    zenity --info --title="List of Databases" --text="List of databases:\n$databases"
+    zenity --info --title="List of Databases" --text="List of databases:\n$database"
 }
 
 connect_to_database() {
