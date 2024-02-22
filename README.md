@@ -1,5 +1,7 @@
 # Database-management system (DBMS)
-Database management system(DBMS) using Bash-Script A simple Database Management System using bash shell scripting that handles all CRUD operations.
+![Article Cover](https://media.licdn.com/dms/image/D4D12AQFyLZBgxb109A/article-cover_image-shrink_600_2000/0/1678105450255?e=2147483647&v=beta&t=uVpOz-H89BuUCtcdN2J5HXp9C5r5h59WMbsJ-gqwjps)
+
+**Database management system(DBMS)** using Bash-Script A simple Database Management System using bash shell scripting that handles all CRUD operations.
 The Project aims to develop DBMS that will enable users to store and retrieve the data from Hard-disk.
 
 ## Features
